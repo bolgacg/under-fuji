@@ -530,7 +530,7 @@
         <p>Fights: ${S.fights}, shaken ${S.shakenN} time${S.shakenN === 1 ? '' : 's'}. Dread ${S.dread}, mirth ${S.mirth}, harmony ${S.harmony}. Undos: ${S.undos || 0}.</p>
         <h3>Endings found: ${found.length} of 6</h3><p>${Object.entries(UF.ENDINGS).map(([id, x]) => (found.includes(id) ? `<b>${esc(x.t)}</b>` : '???')).join(' · ')}</p></div></div>
         ${msg ? `<p><small>${esc(msg)}</small></p>` : ''}
-        <div class="choices rowed"><button class="primary" data-k="x">To the menu</button><button data-k="share">Copy our result to share</button>${BOARD && !posted ? '<button data-k="post">Add us to the shared board</button>' : ''}<button data-k="board">Records</button></div>`, 'sheet');
+        <div class="choices rowed">${BOARD && !posted ? '<button class="primary" data-k="post">Add us to the shared board</button>' : ''}<button class="${BOARD && !posted ? '' : 'primary'}" data-k="x">To the menu</button><button data-k="share">Copy our result to share</button><button data-k="board">Records</button></div>`, 'sheet');
       if (k === 'share') {
         const t = `${rec.team} reached "${UF.ENDINGS[S.over].t}" in Under Fuji with ${sc.total} renown. ${UF.CFG.site}`;
         try { await navigator.clipboard.writeText(t); msg = 'Copied. Paste it wherever your friends are.'; } catch (e) { msg = t; }

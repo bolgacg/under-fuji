@@ -50,9 +50,10 @@ one-line result to paste to friends.
 
 ### The shared board
 
-The game can also keep one board for everybody who plays this copy. It is switched off until
-`data/config.js` names a backend, because a static page cannot store anything shared by itself. The
-code expects a free Supabase project with one table:
+The hosted copy also keeps one board for everybody who plays it: "Add us to the shared board" on the
+ending screen posts a finished journey, and "Records" shows all of them. A static page cannot store
+anything shared by itself, so the board lives in a free Supabase project named in `data/config.js`. A
+copy of your own needs its own project with this one table:
 
     create table scores (
       id uuid primary key,
