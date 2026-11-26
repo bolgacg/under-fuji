@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Under Fuji: a road story for two, told in questions</title>
+<meta name="description" content="A cooperative trivia adventure for two players on one screen, set in old Japan. Fourteen days, one mountain, six endings.">
+<meta property="og:title" content="Under Fuji">
+<meta property="og:description" content="A cooperative trivia adventure for two, set in old Japan. Fourteen days, one mountain, six endings.">
+<meta property="og:image" content="https://bolgacg.github.io/under-fuji/assets/prints/fuji.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#2a2018">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23f4ead3'/><circle cx='47' cy='17' r='9' fill='%23b5382a'/><path d='M4 54 Q22 46 28 22 L38 22 Q44 46 60 54 Z' fill='%2327496d'/><path d='M28 22 L38 22 L41 31 L36 28 L33 33 L30 28 L26 31 Z' fill='%23fff'/></svg>">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="map">
+      <svg id="scenery" viewBox="0 0 1600 640" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9d7b0"/><stop offset=".55" stop-color="#f4ead3"/><stop offset="1" stop-color="#efe2c4"/></linearGradient>
+          <linearGradient id="gfuji" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b5f86"/><stop offset=".6" stop-color="#6f8fa8"/><stop offset="1" stop-color="#b9c7b4"/></linearGradient>
+          <linearGradient id="gsea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fbfd0"/><stop offset="1" stop-color="#3f6f95"/></linearGradient>
+        </defs>
+        <rect width="1600" height="640" fill="url(#gsky)"/>
+        <circle id="sun" cx="1330" cy="78" r="44" fill="#c0392b"/>
+        <circle id="shadow" cx="1450" cy="78" r="44" fill="#2a2018"/>
+        <g fill="#e3c98f" opacity=".55"><rect x="60" y="70" width="330" height="20" rx="10"/><rect x="150" y="98" width="420" height="20" rx="10"/><rect x="1010" y="130" width="300" height="18" rx="9"/><rect x="1120" y="40" width="150" height="16" rx="8"/><rect x="40" y="560" width="360" height="20" rx="10"/><rect x="130" y="588" width="260" height="18" rx="9"/></g>
+        <path d="M 360 395 Q 590 310 700 88 L 822 88 Q 930 310 1160 395 Z" fill="url(#gfuji)" stroke="#2a2018" stroke-width="2.5"/>
+        <path d="M 700 88 L 822 88 Q 842 132 866 170 L 836 152 L 808 186 L 778 152 L 752 190 L 724 154 L 696 176 L 660 168 Q 684 130 700 88 Z" fill="#fbf7ec" stroke="#2a2018" stroke-width="2"/>
+        <path d="M 760 640 Q 880 585 1080 612 T 1600 520 L 1600 640 Z" fill="url(#gsea)" stroke="#2a2018" stroke-width="2"/>
+        <g fill="none" stroke="#f4ead3" stroke-width="2" opacity=".8"><path d="M 1130 628 q 20 -14 40 0 t 40 0 t 40 0"/><path d="M 1340 610 q 20 -14 40 0 t 40 0 t 40 0"/><path d="M 1480 580 q 20 -14 40 0 t 40 0"/><path d="M 900 632 q 20 -14 40 0 t 40 0"/></g>
+        <g id="roads"></g>
+      </svg>
+      <div id="places"></div>
+    </div>
+    <div id="hud"></div>
+    <div id="modal" hidden><div id="card"></div></div>
+    <div id="aud"></div>
+    <div id="tip" hidden></div>
+  </div>
+  <div id="bottom">
+    <section class="pp c0" id="p0"></section>
+    <section id="mid"></section>
+    <section class="pp c1" id="p1"></section>
+  </div>
+</div>
+<noscript>Under Fuji needs JavaScript.</noscript>
+<script src="data/config.js"></script>
+<script src="data/balance.js"></script>
+<script src="data/world.js"></script>
+<script src="data/events.js"></script>
+<script src="data/lore_questions.js"></script>
+<script src="data/questions.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/trivia.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

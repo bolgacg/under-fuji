@@ -1,0 +1,8 @@
+# local tooling and logs
+tools/.pylib/
+__pycache__/
+*.log
+.launcher
+
+# narrator clips rendered with edge-tts: kept local until their publication is decided
+assets/voice/
