@@ -1,7 +1,7 @@
 [
   { "id": "en-US-AndrewMultilingualNeural", "label": "Andrew: American, warm and unhurried" },
   { "id": "en-US-BrianMultilingualNeural", "label": "Brian: American, light and friendly" },
-  { "id": "en-US-GuyNeural", "label": "Guy: American, the voice from the conservancy game" },
+  { "id": "en-US-GuyNeural", "label": "Guy: American, newsreader" },
   { "id": "en-GB-RyanNeural", "label": "Ryan: British, storyteller" },
   { "id": "en-GB-SoniaNeural", "label": "Sonia: British, calm" },
   { "id": "en-US-AvaMultilingualNeural", "label": "Ava: American, soft" }

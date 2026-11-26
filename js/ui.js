@@ -86,7 +86,7 @@
   // ---------- rendering ----------
   function render() {
     A.mood(!S ? 'title' : combat ? (combat.d.boss ? 'boss' : combat.ms > combat.mb ? 'yokai' : 'battle') : S.over ? 'ending' : A.placeMood[S.at]);
-    $('#aud').innerHTML = `<button data-a="music">Music: ${A.pref.music}</button><button data-a="sound">Sound effects: ${A.pref.sfx ? 'on' : 'off'}</button>${A.hasClips() ? `<button data-a="narr">Narrator: ${A.pref.narr ? 'on' : 'off'}</button>` : ''}<button data-a="full">Full screen</button>`;
+    $('#aud').innerHTML = `<button data-a="music">Music: ${A.pref.music ? 'on' : 'off'}</button><button data-a="sound">Sound effects: ${A.pref.sfx ? 'on' : 'off'}</button>${A.hasClips() ? `<button data-a="narr">Narrator: ${A.pref.narr ? 'on' : 'off'}</button>` : ''}<button data-a="full">Full screen</button>`;
     document.body.classList.toggle('nogame', !S); // before a journey the menu has the whole screen
     if (!S) return;
     renderHud(); renderMap(); [0, 1].forEach(i => { $('#p' + i).innerHTML = panel(i); }); $('#mid').innerHTML = mid();
@@ -450,10 +450,11 @@
       const st = await voiceList(), local = !!(st && st.service), size = get(SIZE, 'normal');
       const seg = (key, cur, opts) => opts.map(([v, l]) => `<button class="${cur === v ? 'on' : ''}" data-k="${key}:${v}">${l}</button>`).join('');
       const vs = st ? st.voices.filter(v => v.ready || local) : [];
+      const vol = k => `<input type="range" min="0" max="100" step="5" value="${A.pref.vol[k]}" data-vol="${k}" aria-label="Volume"><span class="val">${A.pref.vol[k]}</span>`;
       const k = await ask(`<h2>Settings</h2>
-        <h3>Sound</h3><div class="row"><span>Music</span>${seg('m', A.pref.music, [['off', 'Off'], ['soft', 'Soft'], ['full', 'Full']])}</div>
-        <div class="row"><span>Sound effects</span>${seg('f', A.pref.sfx ? 'on' : 'off', [['on', 'On'], ['off', 'Off']])}</div>
-        <h3>Narrator</h3>${vs.length ? `<div class="row"><span>Reads the story texts aloud, not the questions</span>${seg('n', A.pref.narr ? 'on' : 'off', [['on', 'On'], ['off', 'Off']])}</div>` +
+        <h3>Sound</h3><div class="row"><span>Music</span>${vol('music')}${seg('m', A.pref.music ? 'on' : 'off', [['on', 'On'], ['off', 'Off']])}</div>
+        <div class="row"><span>Sound effects</span>${vol('sfx')}${seg('f', A.pref.sfx ? 'on' : 'off', [['on', 'On'], ['off', 'Off']])}</div>
+        <h3>Narrator</h3>${vs.length ? `<div class="row"><span>Reads the story texts aloud, not the questions</span>${vol('narr')}${seg('n', A.pref.narr ? 'on' : 'off', [['on', 'On'], ['off', 'Off']])}</div>` +
           vs.map(v => `<div class="row"><span><b>${esc(v.label)}</b> <small>${v.done ? '' : v.ready ? v.ready + ' of ' + v.total + ' texts rendered' : 'not rendered yet'}</small></span><button data-k="s:${v.id}">Listen</button><button class="${A.pref.voice === v.id ? 'on' : ''}" data-k="u:${v.id}">${A.pref.voice === v.id ? 'In use' : v.done || !local ? 'Use' : 'Render and use'}</button></div>`).join('')
           : '<p><small>This copy of the game comes without a narrator.</small></p>'}
         <h3>Text size</h3><div class="row"><span>Pick what reads well from where you sit</span>${seg('z', size, [['small', 'Smaller'], ['normal', 'Normal'], ['large', 'Larger']])}</div>
@@ -461,6 +462,11 @@
         <div class="row"><span>Remove the journey, records and settings from this browser</span><button data-k="wipe">Erase everything</button></div>
         <div class="choices"><button class="primary" data-k="x">Done</button></div>`, 'sheet', () => {
         if (after) after(); after = null;
+        // sliders act at once, without redrawing the screen; on release the effects and the narrator play a sample
+        $('#card').querySelectorAll('input[type=range]').forEach(r => {
+          r.oninput = () => { A.setVol(r.dataset.vol, r.value); r.nextElementSibling.textContent = r.value; };
+          r.onchange = () => { if (r.dataset.vol === 'sfx') A.sfx('right'); if (r.dataset.vol === 'narr' && A.pref.narr) A.sample(A.pref.voice); };
+        });
         $('#savefile').onchange = e => { const f = e.target.files[0]; if (f && resolver) { pickedFile = f; resolver('import'); } };
       });
       if (k === 'x' || k === 'enter') break;
@@ -473,7 +479,7 @@
         continue;
       }
       const a = k[0], v = k.slice(2);
-      if (a === 'm') while (A.pref.music !== v) A.toggle('music');
+      if (a === 'm' && (A.pref.music ? 'on' : 'off') !== v) A.toggle('music');
       if (a === 'f' && (A.pref.sfx ? 'on' : 'off') !== v) A.toggle('sfx');
       if (a === 'n' && (A.pref.narr ? 'on' : 'off') !== v) A.toggle('narr');
       if (a === 'z') { put(SIZE, v); applySize(); }

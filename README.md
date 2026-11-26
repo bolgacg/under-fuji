@@ -76,7 +76,8 @@ the browser, so the board is for friends, not for strangers.
 
 Music and sound effects are synthesised in the browser by `js/audio.js`; there are no audio files for
 them. The music is generated note by note from Japanese pentatonic scales, one mood per place and per
-kind of fight. The buttons in the bottom left corner set the music (off, soft or full) and the effects.
+kind of fight. The buttons in the bottom left corner switch music, effects and narrator on and off, and Settings has a
+volume slider for each. The music starts quiet enough to sit under the narrator.
 
 A copy that has narrator clips in `assets/voice/` also reads the story texts aloud, and Settings lists
 the voices. `tools/render_voice.py` renders them with edge-tts and names each clip after a hash of its

@@ -4,11 +4,15 @@
   const UF = globalThis.UF, A = UF.A = {};
   const ls = k => localStorage.getItem('underfuji_' + k);
   // music: off, soft or full. sfx and narr: on or off. voice: the narrator's edge-tts voice id.
-  const pref = A.pref = { music: ['off', 'soft', 'full'].includes(ls('music')) ? ls('music') : 'soft', sfx: ls('sfx') !== 'off',
-    narr: ls('narr') !== 'off', voice: ls('voice') || 'en-US-AndrewMultilingualNeural' };
-  const MUSIC = { off: 0, soft: 0.24, full: 0.5 }, SFX = 0.5;
+  const num = (k, d) => { const v = parseFloat(ls(k)); return isFinite(v) ? Math.max(0, Math.min(100, v)) : d; };
+  // music, sfx, narr: on or off. vol: the three sliders in Settings, 0 to 100. voice: the narrator's voice id.
+  const pref = A.pref = { music: ls('music') !== 'off', sfx: ls('sfx') !== 'off', narr: ls('narr') !== 'off',
+    voice: ls('voice') || 'en-US-AndrewMultilingualNeural', vol: { music: num('vol_music', 50), sfx: num('vol_sfx', 70), narr: num('vol_narr', 100) } };
   let G = null, cur = null, curName = null, want = 'title', moodOut = null, step = 0, nextT = 0, moodStart = 0, speaking = null;
-  const musicLevel = () => MUSIC[pref.music] * (speaking ? 0.4 : 1); // the music steps back while the narrator speaks
+  // Sliders are squared so that half way sounds about half as loud. The music starts at 50, which is quiet enough
+  // to sit under the narrator, and it steps back further while the narrator speaks.
+  const musicLevel = () => (pref.music ? 0.5 * Math.pow(pref.vol.music / 100, 2) * (speaking ? 0.5 : 1) : 0);
+  const sfxLevel = () => (pref.sfx ? Math.pow(pref.vol.sfx / 100, 2) : 0);
   const R = Math.random, pick = a => a[Math.floor(R() * a.length)];
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);
   // yo: bright folk scale. hira: the koto tuning hirajoshi. miyako: the dark city scale. insen and iwato: darker still.
@@ -25,7 +29,7 @@
     // the music passes a low-pass filter, which takes the sharp edge off drums, flutes and bells
     const soft = ctx.createBiquadFilter(); soft.type = 'lowpass'; soft.frequency.value = 2600; soft.Q.value = 0.5; soft.connect(g.master); soft.connect(g.verb);
     g.music = ctx.createGain(); g.music.gain.value = musicLevel(); g.music.connect(soft);
-    g.sfx = ctx.createGain(); g.sfx.gain.value = pref.sfx ? SFX : 0; g.sfx.connect(g.master); g.sfx.connect(g.verb);
+    g.sfx = ctx.createGain(); g.sfx.gain.value = sfxLevel(); g.sfx.connect(g.master); g.sfx.connect(g.verb);
     return g;
   }
 
@@ -188,7 +192,7 @@
   }
   // Calm moods breathe: six bars of music, then two of silence. After a minute in one place the music steps back.
   function tick() {
-    if (!G || !cur || pref.music === 'off' || G.ctx.state !== 'running') return;
+    if (!G || !cur || !pref.music || G.ctx.state !== 'running') return;
     const now = G.ctx.currentTime; if (nextT < now) nextT = now + 0.05;
     if (!cur.fight && !cur.settled && now - moodStart > 60) { cur.settled = 1; moodOut.gain.setTargetAtTime((cur.vol || 1) * 0.55, now, 8); }
     while (nextT < now + 0.3) { if (cur.fight || Math.floor(step / 16) % 8 < 6) cur.play(step, nextT, moodOut, cur); nextT += 15 / cur.bpm; step++; }
@@ -234,12 +238,16 @@
   A.mood = setMood;
   A.sfx = (name, x) => { if (G && pref.sfx && S[name] && G.ctx.state === 'running') S[name](G.sfx, G.ctx.currentTime + 0.02, x); };
   const setMusic = () => { if (G) G.music.gain.setTargetAtTime(musicLevel(), G.ctx.currentTime, 0.25); };
+  const setSfx = () => { if (G) G.sfx.gain.setTargetAtTime(sfxLevel(), G.ctx.currentTime, 0.1); };
   A.toggle = k => {
-    if (k === 'music') { pref.music = { off: 'soft', soft: 'full', full: 'off' }[pref.music]; localStorage.setItem('underfuji_music', pref.music); setMusic(); return; }
     pref[k] = !pref[k]; localStorage.setItem('underfuji_' + k, pref[k] ? 'on' : 'off');
-    if (k === 'sfx' && G) G.sfx.gain.setTargetAtTime(pref.sfx ? SFX : 0, G.ctx.currentTime, 0.15);
-    if (k === 'narr' && !pref.narr) A.hush();
+    if (k === 'music') setMusic(); if (k === 'sfx') setSfx(); if (k === 'narr' && !pref.narr) A.hush();
   };
+  A.setVol = (k, v) => {
+    pref.vol[k] = Math.max(0, Math.min(100, +v || 0)); localStorage.setItem('underfuji_vol_' + k, pref.vol[k]);
+    if (k === 'music') setMusic(); if (k === 'sfx') setSfx(); if (k === 'narr' && speaking) speaking.volume = pref.vol.narr / 100;
+  };
+
 
   // ---------- the narrator: pre-rendered clips, one per story text, each named after a hash of its text ----------
   let clips = null, clipsAt = 0, clipsDone = false;
@@ -256,15 +264,15 @@
     A.hush(); if (!pref.narr || !text) return;
     if (!clips || (!clipsDone && Date.now() - clipsAt > 15000)) loadClips();
     const k = A.hash(text); if (!clips || !clips.has(k)) return;
-    const el = new Audio(`assets/voice/${pref.voice}/${k}.mp3`); speaking = el; setMusic();
+    const el = new Audio(`assets/voice/${pref.voice}/${k}.mp3`); el.volume = pref.vol.narr / 100; speaking = el; setMusic();
     el.onended = el.onerror = () => quiet(el); el.play().catch(() => quiet(el));
   };
   A.setVoice = v => { pref.voice = v; localStorage.setItem('underfuji_voice', v); clips = null; clipsDone = false; return loadClips(); };
-  A.sample = v => { A.hush(); const el = new Audio(`assets/voice/samples/${v}.mp3`); speaking = el; setMusic(); el.onended = el.onerror = () => quiet(el); el.play().catch(() => quiet(el)); };
+  A.sample = v => { A.hush(); const el = new Audio(`assets/voice/samples/${v}.mp3`); el.volume = pref.vol.narr / 100; speaking = el; setMusic(); el.onended = el.onerror = () => quiet(el); el.play().catch(() => quiet(el)); };
   // Render a mood or an effect off-line and report its loudness. Used to balance levels without ears.
   A.measure = async (name, secs, isSfx) => {
     const keep = G, oc = new OfflineAudioContext(2, Math.floor(44100 * secs), 44100);
-    G = build(oc); G.music.gain.value = MUSIC.soft; G.sfx.gain.value = SFX;
+    G = build(oc); G.music.gain.value = 0.5 * 0.25; G.sfx.gain.value = 0.49; // the default slider positions
     if (isSfx) S[name](G.sfx, 0.05, 2);
     else { const m = Object.assign({}, M[name]), out = oc.createGain(); out.gain.value = m.vol || 1; out.connect(G.music); let t = 0.05, s = 0; while (t < secs - 0.5) { m.play(s, t, out, m); t += 15 / m.bpm; s++; } }
     G = keep;
