@@ -423,7 +423,8 @@
   // The narrator's voices: from the local server when there is one, else from the list published with the game.
   let pickedFile = null;
   async function voiceList() {
-    for (const u of ['voice/status', 'assets/voice/index.json']) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) return await r.json(); } catch (e) { /* try the next */ } }
+    const here = ['localhost', '127.0.0.1'].includes(location.hostname); // only a local copy has the rendering server
+    for (const u of (here ? ['voice/status'] : []).concat('assets/voice/index.json')) { try { const r = await fetch(u, { cache: 'no-store' }); if (r.ok) return await r.json(); } catch (e) { /* try the next */ } }
     return null;
   }
   function exportSave() {

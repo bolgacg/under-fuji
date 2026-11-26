@@ -247,7 +247,7 @@
   function loadClips() {
     clipsAt = Date.now();
     return fetch(`assets/voice/${pref.voice}/manifest.json`, { cache: 'no-store' }).then(r => r.json())
-      .then(j => { clips = new Set(j.clips); clipsDone = !!j.done; if (A.onReady) A.onReady(); }).catch(() => { clips = clips || new Set(); });
+      .then(j => { clips = new Set(j.clips); clipsDone = !!j.done; if (A.onReady) A.onReady(); }).catch(() => { clips = clips || new Set(); clipsDone = true; }); // no clips published with this copy: do not ask again
   }
   A.hasClips = () => !!(clips && clips.size);
   const quiet = el => { if (speaking === el) { speaking = null; setMusic(); } };
