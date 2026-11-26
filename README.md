@@ -79,7 +79,7 @@ kind of fight. The buttons in the bottom left corner set the music (off, soft or
 
 A copy that has narrator clips in `assets/voice/` also reads the story texts aloud, and Settings lists
 the voices. `tools/render_voice.py` renders them with edge-tts and names each clip after a hash of its
-text. The hosted copy is published without those clips.
+text. The hosted copy carries one voice.
 
 ## Running a copy yourself
 

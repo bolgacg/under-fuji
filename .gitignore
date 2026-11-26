@@ -4,5 +4,6 @@ __pycache__/
 *.log
 .launcher
 
-# narrator clips rendered with edge-tts: kept local until their publication is decided
-assets/voice/
+# narrator: only the voice that is fully rendered is published, with its sample
+assets/voice/samples/*
+!assets/voice/samples/en-US-AndrewMultilingualNeural.mp3
