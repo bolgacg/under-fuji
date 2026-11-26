@@ -486,16 +486,41 @@
       render();
     }
   }
-  const recTable = rows => (rows.length ? `<table class="board"><tr><th></th><th>Travellers</th><th>Renown</th><th>Ending</th><th>Blessings</th><th>Undos</th><th>Date</th></tr>` +
-    rows.map((r, n) => `<tr><td>${n + 1}</td><td>${esc(r.team)}</td><td><b>${+r.score || 0}</b></td><td>${esc((UF.ENDINGS[r.ending] || { t: '?' }).t)}</td><td>${+(r.blessings !== undefined ? r.blessings : r.bless) || 0}</td><td>${+r.undos || 0}</td><td>${esc(String(r.created_at || r.date || '').slice(0, 10))}</td></tr>`).join('') + '</table>'
+  const recTable = (rows, posted) => (rows.length ? `<table class="board"><tr><th></th><th>Travellers</th><th>Renown</th><th>Ending</th><th>Blessings</th><th>Undos</th><th>Date</th>${posted ? '<th></th>' : ''}</tr>` +
+    rows.map((r, n) => `<tr><td>${n + 1}</td><td>${esc(r.team)}</td><td><b>${+r.score || 0}</b></td><td>${esc((UF.ENDINGS[r.ending] || { t: '?' }).t)}</td><td>${+(r.blessings !== undefined ? r.blessings : r.bless) || 0}</td><td>${+r.undos || 0}</td><td>${esc(String(r.created_at || r.date || '').slice(0, 10))}</td>${posted ? `<td>${posted.includes(r.id) ? 'on the board' : `<button data-k="p:${esc(r.id)}">Add to the shared board</button>`}</td>` : ''}</tr>`).join('') + '</table>'
     : '<p><small>Nothing here yet.</small></p>');
+  // A journey finished before the game kept records is rebuilt from what its save still holds.
+  // Older versions did not count answer points or fights won, so those two are estimated from the hit rates and the fight count.
+  function legacyRecords() {
+    const recs = get(REC, []), seen = {}, sig = v => [v.over, v.P[0].name, v.P[1].name, v.day, v.coins, v.fights].join('|');
+    [[SAVE, load()], [FIN, get(FIN, null)]].forEach(([key, v]) => {
+      if (!v || !v.over || !UF.ENDINGS[v.over] || !Array.isArray(v.P)) return;
+      if (!v.id) { v.id = seen[sig(v)] || uid(); put(key, v); } // the save and the finale copy can be the same journey
+      seen[sig(v)] = v.id;
+      if (recs.some(r => r.id === v.id)) return;
+      const est = v.pts === undefined;
+      if (est) {
+        v.pts = v.P.reduce((a, p) => a + p.ways.reduce((x, w) => x + ((p.rec[w.id] || [0])[0]) * [2, 3, 5][w.d], 0), 0);
+        v.wins = Math.max(0, (v.fights || 0) - (v.shakenN || 0));
+      }
+      recs.push({ id: v.id, team: v.team || v.P[0].name + ' and ' + v.P[1].name, score: E.score(v).total, ending: v.over, bless: v.bless.length, undos: v.undos || 0, date: new Date().toISOString(), est });
+    });
+    put(REC, recs);
+  }
   async function board() {
-    let online = null, err = '';
-    if (BOARD) { try { online = await boardGet(); if (!Array.isArray(online)) throw new Error('no list'); } catch (e) { online = null; err = 'The shared board could not be reached just now.'; } }
-    const mine = get(REC, []).slice().sort((a, b) => b.score - a.score);
-    await ask(`<h2>Records</h2>${BOARD ? `<h3>All travellers</h3>${online ? recTable(online) : `<p><small>${err}</small></p>`}` : ''}<h3>Journeys finished in this browser</h3>${recTable(mine)}
-      <p><small>Renown counts the ending, blessings, right answers (harder and typed ones count more), fights won, quests and treasures. Being shaken costs some. Undos are shown, not punished.</small></p>
-      <div class="choices"><button class="primary" data-k="x">Back</button></div>`, 'sheet');
+    let msg = '';
+    for (;;) {
+      let online = null, err = '';
+      if (BOARD) { try { online = await boardGet(); if (!Array.isArray(online)) throw new Error('no list'); } catch (e) { online = null; err = 'The shared board could not be reached just now.'; } }
+      const mine = get(REC, []).slice().sort((a, b) => b.score - a.score);
+      const k = await ask(`<h2>Records</h2>${BOARD ? `<h3>All travellers</h3>${online ? recTable(online) : `<p><small>${err}</small></p>`}` : ''}<h3>Journeys finished in this browser</h3>${recTable(mine, BOARD ? get(POSTED, []) : null)}
+        ${msg ? `<p><small>${esc(msg)}</small></p>` : ''}
+        <p><small>Renown counts the ending, blessings, right answers (harder and typed ones count more), fights won, quests and treasures. Being shaken costs some. Undos are shown, not punished.</small></p>
+        <div class="choices"><button class="primary" data-k="x">Back</button></div>`, 'sheet');
+      if (k.slice(0, 2) !== 'p:') break;
+      const rec = mine.find(r => r.id === k.slice(2));
+      if (rec && await boardPost(rec).catch(() => false)) { put(POSTED, get(POSTED, []).concat(rec.id)); msg = rec.team + ' is on the board.'; } else msg = 'The board could not be reached. Try again in a moment.';
+    }
   }
   async function journal() {
     const f = S.flags, place = b => Object.values(UF.PLACES).find(p => p.bless === b).n, clues = [], left = B.days - S.day;
@@ -603,6 +628,7 @@
 
   UF.debug = { get S() { return S; }, set S(v) { S = v; render(); }, render, save };
   { const sv = load(); if (sv && sv.over && !localStorage.getItem(FIN)) { try { localStorage.setItem(FIN, JSON.stringify(sv)); } catch (e) { /* no room */ } } }
+  legacyRecords();
   A.onReady = () => render();
   render(); busy = true; title().finally(() => { busy = false; save(); render(); });
 })();
